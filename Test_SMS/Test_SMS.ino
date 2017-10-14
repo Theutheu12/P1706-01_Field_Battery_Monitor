@@ -14,6 +14,74 @@ char 	aux_string[30];
 // Inscrivez ici le numéro de téléphone pour l'envoie du SMS.
 char phone_number[]="+41798216349";
 
+// Cette fonction permet d'envoyer des commandes AT au module GSM.
+int8_t sendATcommand(char* ATcommand, char* expected_answer, unsigned int timeout){
+
+    uint8_t x=0,  answer=0;
+    char response[100];
+    unsigned long previous;
+
+    // Initialisation de la chaine de caractère (string).
+    memset(response, '\0', 100);
+    
+    delay(100);
+    
+    // Initialisation du tampon d'entrée (input buffer).
+    while( mySerial.available() > 0) mySerial.read();
+    
+    // Envoi des commandes AT
+    mySerial.println(ATcommand);
+
+
+    x = 0;
+    previous = millis();
+
+    // Cette boucle attend la réponse du module GSM.
+    
+    do{
+// Cette commande vérifie s'il y a des données disponibles dans le tampon.
+//Ces données sont comparées avec la réponse attendue.
+        if(mySerial.available() != 0){    
+            response[x] = mySerial.read();
+            x++;
+            // Comparaison des données
+            if (strstr(response, expected_answer) != NULL)    
+            {
+                answer = 1;
+            }
+        }
+    // Attente d'une réponse.
+    }while((answer == 0) && ((millis() - previous) < timeout));    
+
+    //Serial.println(response); //Cette ligne permet de debuguer le programme en cas de problème !
+    return answer;
+}
+
+void power_on(){
+
+    uint8_t answer=0;
+    
+    // Cette commande vérifie si le module GSM est en marche.
+    answer = sendATcommand("AT", "OK", 2000);
+    Serial.println(answer, DEC);
+    if (answer == 0)
+    {
+        // Mise en marche du module GSM
+        digitalWrite(onModulePin,HIGH);
+        delay(3000);
+        digitalWrite(onModulePin,LOW);
+    
+        // Envoie d'une commande AT toutes les deux secondes et attente d'une réponse.
+        while(answer == 0){
+            answer = sendATcommand("AT", "OK", 2000);    
+        }
+    }
+    
+}
+
+
+
+
 void setup() {
 
 	pinMode(onModulePin, OUTPUT);
@@ -73,71 +141,4 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-}
-
-void power_on(){
-
-    uint8_t answer=0;
-    
-    // Cette commande vérifie si le module GSM est en marche.
-    answer = sendATcommand("AT", "OK", 2000);
-    Serial.println(answer, DEC);
-    if (answer == 0)
-    {
-        // Mise en marche du module GSM
-        digitalWrite(onModulePin,HIGH);
-        delay(3000);
-        digitalWrite(onModulePin,LOW);
-    
-        // Envoie d'une commande AT toutes les deux secondes et attente d'une réponse.
-        while(answer == 0){
-            answer = sendATcommand("AT", "OK", 2000);    
-        }
-    }
-    
-}
-
-
-
-// Cette fonction permet d'envoyer des commandes AT au module GSM.
-int8_t sendATcommand(char* ATcommand, char* expected_answer, unsigned int timeout){
-
-    uint8_t x=0,  answer=0;
-    char response[100];
-    unsigned long previous;
-
-    // Initialisation de la chaine de caractère (string).
-    memset(response, '\0', 100);
-    
-    delay(100);
-    
-    // Initialisation du tampon d'entrée (input buffer).
-    while( mySerial.available() > 0) mySerial.read();
-    
-    // Envoi des commandes AT
-    mySerial.println(ATcommand);
-
-
-    x = 0;
-    previous = millis();
-
-    // Cette boucle attend la réponse du module GSM.
-    
-    do{
-// Cette commande vérifie s'il y a des données disponibles dans le tampon.
-//Ces données sont comparées avec la réponse attendue.
-        if(mySerial.available() != 0){    
-            response[x] = mySerial.read();
-            x++;
-            // Comparaison des données
-            if (strstr(response, expected_answer) != NULL)    
-            {
-                answer = 1;
-            }
-        }
-    // Attente d'une réponse.
-    }while((answer == 0) && ((millis() - previous) < timeout));    
-
-    //Serial.println(response); //Cette ligne permet de debuguer le programme en cas de problème !
-    return answer;
 }
