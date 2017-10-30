@@ -5,17 +5,19 @@
 //######################################################################################
 #include <SoftwareSerial.h>
 #include <Cmd.h>
+#include <avr/wdt.h>
 //######################################################################################
 //######################################################################################
 #define onModulePin 9
 //######################################################################################
 //######################################################################################
 SoftwareSerial mySerial(7,8);
-int8_t	answer;
-char 	aux_string[30];
+int8_t  answer;
+char    aux_string[30];
 char phone_number[]="+41798216349";
 //######################################################################################
 
+//######################################################################################
 // Cette fonction permet d'envoyer des commandes AT au module GSM.
 int8_t sendATcommand(char* ATcommand, char* expected_answer, unsigned int timeout){
 
@@ -41,8 +43,8 @@ int8_t sendATcommand(char* ATcommand, char* expected_answer, unsigned int timeou
     // Cette boucle attend la réponse du module GSM.
     
     do{
-// Cette commande vérifie s'il y a des données disponibles dans le tampon.
-//Ces données sont comparées avec la réponse attendue.
+        // Cette commande vérifie s'il y a des données disponibles dans le tampon.
+        //Ces données sont comparées avec la réponse attendue.
         if(mySerial.available() != 0){    
             response[x] = mySerial.read();
             x++;
@@ -55,10 +57,12 @@ int8_t sendATcommand(char* ATcommand, char* expected_answer, unsigned int timeou
     // Attente d'une réponse.
     }while((answer == 0) && ((millis() - previous) < timeout));    
 
-    //Serial.println(response); //Cette ligne permet de debuguer le programme en cas de problème !
+    Serial.print("Test AT : ");
+    Serial.println(response); //Cette ligne permet de debuguer le programme en cas de problème !
     return answer;
 }
 
+//######################################################################################
 void power_on(){
 
     uint8_t answer=0;
@@ -66,6 +70,7 @@ void power_on(){
     // Cette commande vérifie si le module GSM est en marche.
     answer = sendATcommand("AT", "OK", 2000);
     Serial.println(answer, DEC);
+
     if (answer == 0)
     {
         // Mise en marche du module GSM
@@ -73,36 +78,93 @@ void power_on(){
         delay(3000);
         digitalWrite(onModulePin,LOW);
     
-        // Envoie d'une commande AT toutes les deux secondes et attente d'une réponse.
+        /*// Envoie d'une commande AT toutes les deux secondes et attente d'une réponse.
         while(answer == 0){
             answer = sendATcommand("AT", "OK", 2000);    
-        }
+        }*/
+        delay(2000);
     }
+
+    Serial.println("DONE");
     
 }
 
+//######################################################################################
+void hello(int arg_cnt, char **args) {
 
+    Serial.println("Hello world.");
+}
+
+//######################################################################################
+void arg_display(int arg_cnt, char **args) {
+  for (int i=0; i<arg_cnt; i++)
+  {
+    Serial.print("Arg ");
+    Serial.print(i);
+    Serial.print(": ");
+    Serial.println(args[i]);
+  }
+}
+
+//######################################################################################
+void softwareReset( uint8_t prescaller) {
+  // start watchdog with the provided prescaller
+  wdt_enable( prescaller);
+  // wait for the prescaller time to expire
+  // without sending the reset signal by using
+  // the wdt_reset() method
+  while(1) {}
+}
+
+//######################################################################################
+void resetSystem(int arg_cnt, char **args) {
+    
+    softwareReset(WDTO_15MS);
+}
+
+//######################################################################################
+void GSMPowerOn(int arg_cnt, char **args) {
+    
+    power_on();
+}
+
+void ATTest(int arg_cnt, char **args) {
+
+    uint8_t answer=0;
+
+    answer = sendATcommand("AT", "OK", 2000);
+    Serial.print("Test CMD : ");
+    Serial.println(answer);
+}
+
+//######################################################################################
+void help(int arg_cnt, char **args){
+
+    Serial.println("Commands list :");
+    Serial.println("hello");
+    Serial.println("args");
+    Serial.println("reset");
+    Serial.println("GSMPowerOn");
+    Serial.println("ATTest");
+}
 
 
 void setup() {
 
-	pinMode(onModulePin, OUTPUT);
-    Serial.begin(115200);
-    mySerial.begin(115200);  
-        
-    Serial.println("------------------------------------------------------");
-    Serial.println("----Upsilon Audio - Envoyer un SMS avec le SIM900-----");
-    Serial.println("------------------------------------------------------");
-    Serial.println("");
-    Serial.println("Initialisation en cours ...");
-    power_on();
-    
-    //delay(3000);
-    
-    // Cette commande active la carte SIM.
-    //Supprimez cette ligne si vous n'avez pas de code PIN.
-    //sendATcommand("AT+CPIN=****", "OK", 2000);
-    
+    pinMode(onModulePin, OUTPUT);
+    mySerial.begin(19200);
+
+    delay(2000);
+
+    cmdInit(115200);
+    cmdAdd("hello", hello);
+    cmdAdd("args", arg_display);
+    cmdAdd("reset", resetSystem);
+    cmdAdd("GSMPowerOn", GSMPowerOn);
+    cmdAdd("ATTest", ATTest);
+    cmdAdd("help", help);
+
+    /*
     delay(3000);
     
     Serial.println("Connexion au reseau en cours ...");
@@ -137,10 +199,11 @@ void setup() {
     {
         Serial.print("Erreur !");
         Serial.println(answer, DEC);
-    }
+    }*/
 
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+
+    cmdPoll();
 }
