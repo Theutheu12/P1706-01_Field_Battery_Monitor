@@ -11,10 +11,11 @@
 #define onModulePin 9
 //######################################################################################
 //######################################################################################
-SoftwareSerial mySerial(7,8);
-int8_t  answer;
-char    aux_string[30];
-char phone_number[]="+41798216349";
+SoftwareSerial 	mySerial(7,8);
+int8_t  		answer;
+char    		aux_string[30];
+char 			phone_number[]="+41798216349";
+char            SMS[200];
 //######################################################################################
 
 //######################################################################################
@@ -57,8 +58,8 @@ int8_t sendATcommand(char* ATcommand, char* expected_answer, unsigned int timeou
     // Attente d'une réponse.
     }while((answer == 0) && ((millis() - previous) < timeout));    
 
-    Serial.print("Test AT : ");
-    Serial.println(response); //Cette ligne permet de debuguer le programme en cas de problème !
+    //Serial.print("Test AT : ");
+    //Serial.println(response); //Cette ligne permet de debuguer le programme en cas de problème !
     return answer;
 }
 
@@ -78,15 +79,12 @@ void power_on(){
         delay(3000);
         digitalWrite(onModulePin,LOW);
     
-        /*// Envoie d'une commande AT toutes les deux secondes et attente d'une réponse.
+        // Envoie d'une commande AT toutes les deux secondes et attente d'une réponse.
         while(answer == 0){
             answer = sendATcommand("AT", "OK", 2000);    
-        }*/
-        delay(2000);
+        }
     }
-
     Serial.println("DONE");
-    
 }
 
 //######################################################################################
@@ -106,7 +104,7 @@ void arg_display(int arg_cnt, char **args) {
   }
 }
 
-//######################################################################################
+/*//######################################################################################
 void softwareReset( uint8_t prescaller) {
   // start watchdog with the provided prescaller
   wdt_enable( prescaller);
@@ -114,12 +112,14 @@ void softwareReset( uint8_t prescaller) {
   // without sending the reset signal by using
   // the wdt_reset() method
   while(1) {}
-}
+}*/
 
 //######################################################################################
 void resetSystem(int arg_cnt, char **args) {
     
-    softwareReset(WDTO_15MS);
+    //softwareReset(WDTO_15MS);
+    wdt_enable(WDTO_15MS);
+    while(1){}
 }
 
 //######################################################################################
@@ -145,45 +145,41 @@ void help(int arg_cnt, char **args){
     Serial.println("args");
     Serial.println("reset");
     Serial.println("GSMPowerOn");
+    Serial.println("ConnectGSM");
+    Serial.println("sendSMS");
+    Serial.println("readSMS");
     Serial.println("ATTest");
 }
 
+//######################################################################################
+void ConnectGSM(int arg_cnt, char **args){
 
-void setup() {
-
-    pinMode(onModulePin, OUTPUT);
-    mySerial.begin(19200);
-
-    delay(2000);
-
-    cmdInit(115200);
-    cmdAdd("hello", hello);
-    cmdAdd("args", arg_display);
-    cmdAdd("reset", resetSystem);
-    cmdAdd("GSMPowerOn", GSMPowerOn);
-    cmdAdd("ATTest", ATTest);
-    cmdAdd("help", help);
-
-    /*
-    delay(3000);
-    
-    Serial.println("Connexion au reseau en cours ...");
+	Serial.println("Connection to the network...");
 
     while( (sendATcommand("AT+CREG?", "+CREG: 0,1", 500) || 
             sendATcommand("AT+CREG?", "+CREG: 0,5", 500)) == 0 );
 
-    Serial.println("Mode SMS en cours d'activation ...");
+    Serial.println("DONE");
+}
+
+//######################################################################################
+void sendSMS(int arg_cnt, char **args){
+
+	Serial.println("SMS Mode activation...");
     // Activation du mode texte pour les SMS.
     sendATcommand("AT+CMGF=1", "OK", 1000);
-    Serial.println("Envoi du SMS en cours ...");
-    
+    Serial.println("DONE");
+
     sprintf(aux_string,"AT+CMGS=\"%s\"", phone_number);
     // Envoi du numéro de téléphone au module GSM.
     answer = sendATcommand(aux_string, ">", 2000);
+
+    Serial.println(answer, DEC);
+
     if (answer == 1)
     {
         // Insérez ici le coprs du message.
-        mySerial.println("Ceci est un SMS !");
+        mySerial.println(args[1]);
         mySerial.write(0x1A);
         answer = sendATcommand("", "OK", 20000);
         if (answer == 1)
@@ -199,8 +195,79 @@ void setup() {
     {
         Serial.print("Erreur !");
         Serial.println(answer, DEC);
-    }*/
+    }
+}
 
+//######################################################################################
+void readSMS(int arg_cnt, char **args){
+
+    uint8_t x=0;
+
+    Serial.println("SMS Mode activation");
+    // Activation du mode texte pour les SMS.
+    sendATcommand("AT+CMGF=1", "OK", 1000);
+    Serial.println("SMS Mode activation [DONE]");
+
+    // Sélection de la mémoire.
+    Serial.println("SMS Memory selection");
+    sendATcommand("AT+CPMS=\"SM\",\"SM\",\"SM\"", "OK", 1000);
+    Serial.println("SMS Memory selection [DONE]");
+
+    // Lecture du premier SMS disponible.
+    answer = sendATcommand("AT+CMGR=1", "+CMGR:", 2000);
+
+    if (answer == 1)
+    {
+        answer = 0;
+        while(mySerial.available() == 0);
+        // Cette boucle récupère les données du SMS
+        do{
+            // Si des données sont disponibles dans le tampon de la liaison série
+            // Le programme récupère ces données et les compares au code retour de la compmande AT
+            if(mySerial.available() > 0){    
+                SMS[x] = mySerial.read();
+                x++;
+                Serial.println(SMS[x]);
+                // Le module GSM a t'il envoyé le code de retour "OK" ?
+                if (strstr(SMS, "OK") != NULL)    
+                {
+                    Serial.println("OK DONE");
+                    answer = 1;
+                }
+            }
+        }while(answer == 0); // Attente du code de retour.
+        
+        SMS[x] = '\0';
+        
+        Serial.println("Voici le SMS:");
+        Serial.println("");
+        Serial.print(SMS);
+        Serial.println("");    
+        
+    }
+    else
+    {
+        Serial.print("Erreur: ");
+        Serial.println(answer, DEC);
+    }
+}
+
+
+void setup() {
+
+    pinMode(onModulePin, OUTPUT);
+    mySerial.begin(19200);
+
+    cmdInit(115200);
+    cmdAdd("hello", hello);
+    cmdAdd("args", arg_display);
+    cmdAdd("reset", resetSystem);
+    cmdAdd("GSMPowerOn", GSMPowerOn);
+    cmdAdd("ATTest", ATTest);
+    cmdAdd("ConnectGSM", ConnectGSM);
+    cmdAdd("sendSMS", sendSMS);
+    cmdAdd("readSMS", readSMS);
+    cmdAdd("help", help);  
 }
 
 void loop() {
