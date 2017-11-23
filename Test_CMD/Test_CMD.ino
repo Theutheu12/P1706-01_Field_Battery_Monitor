@@ -240,8 +240,6 @@ void setup() {
     mySerial.begin(19200);
 
     cmdInit(115200);
-    cmdAdd("hello", hello);
-    cmdAdd("args", arg_display);
     cmdAdd("reset", resetSystem);
     cmdAdd("GSMPowerOn", GSMPowerOn);
     cmdAdd("ATTest", ATTest);
