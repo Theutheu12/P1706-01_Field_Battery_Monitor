@@ -87,23 +87,6 @@ void power_on(){
     Serial.println("DONE");
 }
 
-//######################################################################################
-void hello(int arg_cnt, char **args) {
-
-    Serial.println("Hello world.");
-}
-
-//######################################################################################
-void arg_display(int arg_cnt, char **args) {
-  for (int i=0; i<arg_cnt; i++)
-  {
-    Serial.print("Arg ");
-    Serial.print(i);
-    Serial.print(": ");
-    Serial.println(args[i]);
-  }
-}
-
 /*//######################################################################################
 void softwareReset( uint8_t prescaller) {
   // start watchdog with the provided prescaller
@@ -141,8 +124,6 @@ void ATTest(int arg_cnt, char **args) {
 void help(int arg_cnt, char **args){
 
     Serial.println("Commands list :");
-    Serial.println("hello");
-    Serial.println("args");
     Serial.println("reset");
     Serial.println("GSMPowerOn");
     Serial.println("ConnectGSM");
