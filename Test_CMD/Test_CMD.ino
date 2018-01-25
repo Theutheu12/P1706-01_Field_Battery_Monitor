@@ -239,6 +239,8 @@ void setup() {
     pinMode(onModulePin, OUTPUT);
     mySerial.begin(19200);
 
+    Serial.println("/// Test CMD ///");
+
     cmdInit(115200);
     cmdAdd("reset", resetSystem);
     cmdAdd("GSMPowerOn", GSMPowerOn);
