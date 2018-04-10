@@ -4,14 +4,15 @@
 
 #include <GPRS_Shield_Arduino.h>
 #include <SoftwareSerial.h>
-//#include <Wire.h>
+#include <Wire.h>
 #include "LowPower.h"
 
 #define PIN_TX    7
 #define PIN_RX    8
 #define BAUDRATE  9600
-#define MESSAGE_LENGTH 21
+#define MESSAGE_LENGTH 25
 #define SLEEP_TIME 1 //75 = 10min
+#define BATTERY_LOW_LIMIT 5
 #define PHONE_VT "+41798216349"
 #define PHONE_DT "+41793807170"
 
@@ -151,7 +152,9 @@ void loop()
 
         for (int i = 0; i < SLEEP_TIME; ++i)
         {
-            //LowPower.powerDown(SLEEP_8S, ADC_ON, BOD_OFF);
+            Serial.println("System sleeping...");
+            delay(10);
+            LowPower.powerDown(SLEEP_8S, ADC_ON, BOD_OFF);
             delay(10);
             Serial.println("System awake !");
             delay(10);
@@ -170,7 +173,7 @@ void loop()
         batteryVoltage = (VBAT_HS_RES+VBAT_LS_RES) * (analogVoltage_A0/VBAT_LS_RES);
         Serial.print("Battery voltage [V]:  ");
         Serial.println(batteryVoltage);
-        Serial.println(analogVoltage_A0_int);
+        //Serial.println(analogVoltage_A0_int);
         delay(10);
 
         State = kCheckGSM;
@@ -190,7 +193,7 @@ void loop()
         Serial.print("New message : ");
         Serial.println(messageIndex);
   
-        if (messageIndex > 0 || batteryVoltage <= 11.0) 
+        if (messageIndex > 0 || batteryVoltage <= BATTERY_LOW_LIMIT) 
         {   //At least, there is one UNREAD SMS
             gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime);
             //In order not to full SIM Memory, is better to delete it
@@ -206,7 +209,7 @@ void loop()
 
             sprintf(message, "Battery voltage: %d.%02d", (int)batteryVoltage, (int)(batteryVoltage*100)%100);
 
-            if(message_str == "Status" || batteryVoltage <= 11.0)
+            if(message_str == "Status" || batteryVoltage <= BATTERY_LOW_LIMIT)
             {
                 State = kSendBattState;
             }
