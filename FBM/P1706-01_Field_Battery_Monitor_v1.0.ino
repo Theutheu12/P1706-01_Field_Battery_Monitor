@@ -153,7 +153,7 @@ void loop()
         for (int i = 0; i < SLEEP_TIME; ++i)
         {
             Serial.println("System sleeping...");
-            delay(10);
+            delay(25);
             LowPower.powerDown(SLEEP_8S, ADC_ON, BOD_OFF);
             delay(10);
             Serial.println("System awake !");
