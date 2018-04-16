@@ -11,8 +11,8 @@
 #define PIN_RX    8
 #define BAUDRATE  9600
 #define MESSAGE_LENGTH 25
-#define SLEEP_TIME 1 //75 = 10min
-#define BATTERY_LOW_LIMIT 5
+#define SLEEP_TIME 75 //75 = 10min
+#define BATTERY_LOW_LIMIT 11
 #define PHONE_VT "+41798216349"
 #define PHONE_DT "+41793807170"
 
@@ -148,18 +148,16 @@ void loop()
         case kSleep:
         // statements
         Serial.println("***** kSleep *****");
-        delay(500);
 
+        Serial.println("System sleeping...");
+        delay(500);
         for (int i = 0; i < SLEEP_TIME; ++i)
         {
-            Serial.println("System sleeping...");
-            delay(25);
             LowPower.powerDown(SLEEP_8S, ADC_ON, BOD_OFF);
-            delay(10);
-            Serial.println("System awake !");
             delay(10);
         }
 
+        Serial.println("System awake !");
         State = kGetBattState;
 
         break;
