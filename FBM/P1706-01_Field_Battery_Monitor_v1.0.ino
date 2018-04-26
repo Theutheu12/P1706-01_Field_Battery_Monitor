@@ -127,7 +127,7 @@ void setup()
 
     ledBlink(GSMInit());
 
-    //GSMInitMsg();
+    GSMInitMsg();
 
     //gprs.powerUpDown(GSM_PWR_PIN);
 
@@ -141,36 +141,37 @@ void loop()
     {
         case kInit:
         // statements
-        Serial.println("***** kInit *****");
+        //Serial.println("***** kInit *****");
         State = kSleep;
         break;
         
         case kSleep:
         // statements
-        Serial.println("***** kSleep *****");
+        //Serial.println("***** kSleep *****");
 
-        Serial.println("System sleeping...");
+        //Serial.println("System sleeping...");
         delay(500);
         for (int i = 0; i < SLEEP_TIME; ++i)
         {
-            LowPower.powerDown(SLEEP_8S, ADC_ON, BOD_OFF);
+            //LowPower.powerDown(SLEEP_8S, ADC_ON, BOD_OFF);
+            LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
             delay(10);
         }
 
-        Serial.println("System awake !");
+        //Serial.println("System awake !");
         State = kGetBattState;
 
         break;
 
         case kGetBattState:
         // statements
-        Serial.println("***** kGetBattState *****");
+        // Serial.println("***** kGetBattState *****");
 
         analogVoltage_A0_int = analogRead(VBAT_PIN);
         analogVoltage_A0 = analogVoltage_A0_int * (5.1/1023.0);
         batteryVoltage = (VBAT_HS_RES+VBAT_LS_RES) * (analogVoltage_A0/VBAT_LS_RES);
-        Serial.print("Battery voltage [V]:  ");
-        Serial.println(batteryVoltage);
+        //Serial.print("Battery voltage [V]:  ");
+        //Serial.println(batteryVoltage);
         //Serial.println(analogVoltage_A0_int);
         delay(10);
 
@@ -180,7 +181,7 @@ void loop()
 
         case kCheckGSM:
         // statements
-        Serial.println("***** kCheckGSM *****");
+        //Serial.println("***** kCheckGSM *****");
 
         //GSMInit();
 
@@ -196,14 +197,14 @@ void loop()
             gprs.readSMS(messageIndex, message, MESSAGE_LENGTH, phone, datetime);
             //In order not to full SIM Memory, is better to delete it
             gprs.deleteSMS(messageIndex);
-            Serial.print("From number: ");
-            Serial.println(phone);  
-            Serial.print("Datetime: ");
-            Serial.println(datetime);        
-            Serial.print("Recieved Message: ");
-            Serial.println(message);
+            //Serial.print("From number: ");
+            //Serial.println(phone);  
+            //Serial.print("Datetime: ");
+            //Serial.println(datetime);        
+            //Serial.print("Recieved Message: ");
+            //Serial.println(message);
             message_str = message;
-            Serial.println(message_str);
+            //Serial.println(message_str);
 
             sprintf(message, "Battery voltage: %d.%02d", (int)batteryVoltage, (int)(batteryVoltage*100)%100);
 
@@ -229,7 +230,7 @@ void loop()
 
         case kSendBattState:
         // statements
-        Serial.println("***** kSendBattState *****");
+        //Serial.println("***** kSendBattState *****");
 
         while(!gprs.isNetworkRegistered())
         {
@@ -237,7 +238,7 @@ void loop()
             Serial.println("Network has not registered yet!");
         }
         
-        Serial.println("Network registered");
+        //Serial.println("Network registered");
         
         if(gprs.sendSMS(phone,message)) //define phone number and text
         {
@@ -256,7 +257,7 @@ void loop()
         
         default:
         // statements
-        Serial.println("***** default *****");
+        //Serial.println("***** default *****");
         //gprs.powerUpDown(GSM_PWR_PIN);
         State = kSleep;
         break;
